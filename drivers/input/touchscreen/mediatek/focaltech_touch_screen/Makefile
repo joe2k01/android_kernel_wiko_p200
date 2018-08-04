@@ -1,4 +1,4 @@
-PROJECT := $(subst full_,,$(TARGET_PRODUCT))
+PROJECT := $(subst lineage_,,$(TARGET_PRODUCT))
 ccflags-y += -I$(srctree)/tinno/$(PROJECT)/touchpanel/focaltech_touch_screen/
 #$(warning   -----------------------TARGET_PRODUCT:  $(TARGET_PRODUCT)-----------------------------)
 #$(warning   -----------------------PROJECT:  $(PROJECT)-----------------------------)
