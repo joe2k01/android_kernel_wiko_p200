@@ -2,8 +2,7 @@
 #
 #Makefile for test module
 #
-PROJECT := $(subst full_,,$(TARGET_PRODUCT))
-ccflags-y += -I$(srctree)/tinno/$(PROJECT)/touchpanel/focaltech_touch/
+ccflags-y += -I$(srctree)/tinno/$(CONFIG_ARCH_MTK_PROJECT)/touchpanel/focaltech_touch/
 ccflags-y += -I$(srctree)/drivers/input/touchscreen/mediatek/
 ccflags-y += -I$(srctree)/drivers/input/touchscreen/mediatek/$(CONFIG_TOUCHSCREEN_MTK_FTS_DIRECTORY)
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/

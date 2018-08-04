@@ -1,7 +1,4 @@
-PROJECT := $(subst full_,,$(TARGET_PRODUCT))
-ccflags-y += -I$(srctree)/tinno/$(PROJECT)/touchpanel/focaltech_touch_screen/
-#$(warning   -----------------------TARGET_PRODUCT:  $(TARGET_PRODUCT)-----------------------------)
-#$(warning   -----------------------PROJECT:  $(PROJECT)-----------------------------)
+ccflags-y += -I$(srctree)/tinno/$(CONFIG_ARCH_MTK_PROJECT)/touchpanel/focaltech_touch_screen/
 # Linux driver folder
 ccflags-y += -I$(srctree)/drivers/input/touchscreen/mediatek/
 ccflags-y += -I$(srctree)/drivers/input/touchscreen/mediatek/$(CONFIG_TOUCHSCREEN_MTK_FTS_DIRECTORY)
