@@ -1,0 +1,7 @@
+&i2c1 {
+	bq24296@6B {
+		compatible = "mediatek,bq24296";
+		reg = <0x6B>;
+		status = "okay";
+	};
+};

@@ -1,3 +1,10 @@
+# guomingyi add for fp qwk support
+fingerprint_supprot := \
+    $(strip $(subst TINNO_FINGERPRINT_SUPPORT =,,$(shell cat $(PWD)/build.ini |grep TINNO_FINGERPRINT_SUPPORT)))
+ifneq ($(strip $(fingerprint_supprot)),)
+    ccflags-y += -DTINNO_FP_QWK_SUPPORT
+endif
+# guomingyi add for fp qwk support
 
 # LED Core
 obj-$(CONFIG_NEW_LEDS)			+= led-core.o

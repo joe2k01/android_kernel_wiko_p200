@@ -1,6 +1,13 @@
 #
 # Makefile for the linux kernel.
 #
+subdir-ccflags-y += -Werror
+ifdef CONFIG_MTPROF
+ccflags-y += -Idrivers/misc/mediatek/mtprof/
+endif
+ifdef CONFIG_MTK_RAM_CONSOLE
+ccflags-y += -Idrivers/misc/mediatek/include/mt-plat/
+endif
 
 obj-y                          := main.o version.o mounts.o
 obj-y                          += noinitramfs.o

@@ -1,0 +1,4 @@
+
+config SIMULATOR_PS_SUPPORT
+	bool "CONFIG_SIMULATOR_PS_SUPPORT"
+	default n

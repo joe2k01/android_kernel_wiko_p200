@@ -1,0 +1,17 @@
+menuconfig TINNO
+	bool "tinno kernel code"
+	help
+	  You can build and test tinno kernel code here.
+
+config TINNO_PERSO_SENSORS
+    bool "sensor control for perso"
+    default n
+    help
+	  control the sensor from misc partition
+
+# product info.
+config TINNO_PRODUCT_INFO
+    bool "TINNO_PRODUCT_INFO"
+    default n
+
+

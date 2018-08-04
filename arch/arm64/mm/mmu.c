@@ -41,6 +41,8 @@
 #include <asm/tlb.h>
 #include <asm/memblock.h>
 #include <asm/mmu_context.h>
+#include <mt-plat/mtk_memcfg.h>
+#include <mt-plat/mtk_meminfo.h>
 
 #include "mm.h"
 
@@ -76,7 +78,7 @@ static phys_addr_t __init early_pgtable_alloc(void)
 	phys_addr_t phys;
 	void *ptr;
 
-	phys = memblock_alloc(PAGE_SIZE, PAGE_SIZE);
+	phys = memblock_alloc_base(PAGE_SIZE, PAGE_SIZE, arm64_dma_phys_limit);
 	BUG_ON(!phys);
 
 	/*
@@ -242,6 +244,17 @@ static inline bool use_1G_block(unsigned long addr, unsigned long next,
 
 	if (((addr | next | phys) & ~PUD_MASK) != 0)
 		return false;
+#ifdef CONFIG_MTK_SVP
+	/*
+	 * SSVP will unmapping memory region which shared with kernel
+	 * and SVP to prevent illegal fetch of EMI MPU Violation.
+	 * Return false to make all memory become pmd mapping.
+	 */
+	if (memory_ssvp_inited()) {
+		pr_info("%s, memory-ssvp inited\n", __func__);
+		return false;
+	}
+#endif
 
 	return true;
 }
@@ -435,6 +448,13 @@ static void __init map_mem(pgd_t *pgd)
 	for_each_memblock(memory, reg) {
 		phys_addr_t start = reg->base;
 		phys_addr_t end = start + reg->size;
+		mtk_memcfg_write_memory_layout_info(MTK_MEMCFG_MEMBLOCK_PHY,
+				"kernel", start, reg->size);
+		MTK_MEMCFG_LOG_AND_PRINTK(
+			"[PHY layout]kernel   :   0x%08llx - 0x%08llx (0x%llx)\n",
+			(unsigned long long)start,
+			(unsigned long long)start + reg->size - 1,
+			(unsigned long long)reg->size);
 
 		if (start >= end)
 			break;
@@ -492,6 +512,37 @@ static void __init map_kernel_chunk(pgd_t *pgd, void *va_start, void *va_end,
 	vm_area_add_early(vma);
 }
 
+#ifdef CONFIG_UNMAP_KERNEL_AT_EL0
+static int __init map_entry_trampoline(void)
+{
+	extern char __entry_tramp_text_start[];
+
+	pgprot_t prot = PAGE_KERNEL_EXEC;
+	phys_addr_t pa_start = __pa_symbol(__entry_tramp_text_start);
+
+	/* The trampoline is always mapped and can therefore be global */
+	pgprot_val(prot) &= ~PTE_NG;
+
+	/* Map only the text into the trampoline page table */
+	memset(tramp_pg_dir, 0, PGD_SIZE);
+	__create_pgd_mapping(tramp_pg_dir, pa_start, TRAMP_VALIAS, PAGE_SIZE,
+			     prot, late_pgtable_alloc);
+
+	/* Map both the text and data into the kernel page table */
+	__set_fixmap(FIX_ENTRY_TRAMP_TEXT, pa_start, prot);
+	if (IS_ENABLED(CONFIG_RANDOMIZE_BASE)) {
+		extern char __entry_tramp_data_start[];
+
+		__set_fixmap(FIX_ENTRY_TRAMP_DATA,
+			     __pa_symbol(__entry_tramp_data_start),
+			     PAGE_KERNEL_RO);
+	}
+
+	return 0;
+}
+core_initcall(map_entry_trampoline);
+#endif
+
 /*
  * Create fine-grained mappings for the kernel.
  */
@@ -499,7 +550,7 @@ static void __init map_kernel(pgd_t *pgd)
 {
 	static struct vm_struct vmlinux_text, vmlinux_rodata, vmlinux_init, vmlinux_data;
 
-	map_kernel_chunk(pgd, _stext, _etext, PAGE_KERNEL_EXEC, &vmlinux_text);
+	map_kernel_chunk(pgd, _text, _etext, PAGE_KERNEL_EXEC, &vmlinux_text);
 	map_kernel_chunk(pgd, __start_rodata, __init_begin, PAGE_KERNEL, &vmlinux_rodata);
 	map_kernel_chunk(pgd, __init_begin, __init_end, PAGE_KERNEL_EXEC,
 			 &vmlinux_init);
@@ -557,9 +608,6 @@ void __init paging_init(void)
 
 	pgd_clear_fixmap();
 	memblock_free(pgd_phys, PAGE_SIZE);
-
-	/* Ensure the zero page is visible to the page table walker */
-	dsb(ishst);
 
 	/*
 	 * We only reuse the PGD from the swapper_pg_dir, not the pud + pmd

@@ -1627,6 +1627,11 @@ static int inode_has_perm(const struct cred *cred,
 	sid = cred_sid(cred);
 	isec = inode->i_security;
 
+	if (isec == NULL) {
+		pr_err("SELinux: security field of inode is null!!\n");
+		return -EINVAL;
+	}
+
 	return avc_has_perm(sid, isec->sid, isec->sclass, perms, adp);
 }
 
@@ -4066,6 +4071,11 @@ static int sock_has_perm(struct task_struct *task, struct sock *sk, u32 perms)
 	struct lsm_network_audit net = {0,};
 	u32 tsid = task_sid(task);
 
+	if (sksec == NULL) {
+		pr_err("SELinux: security field of sock is null!!\n");
+		return -EINVAL;
+	}
+
 	if (sksec->sid == SECINITSID_KERNEL)
 		return 0;
 
@@ -5870,6 +5880,9 @@ static int selinux_key_permission(key_ref_t key_ref,
 
 	key = key_ref_to_ptr(key_ref);
 	ksec = key->security;
+
+	if (unlikely(ksec == NULL))
+		return -EINVAL;
 
 	return avc_has_perm(sid, ksec->sid, SECCLASS_KEY, perm, NULL);
 }

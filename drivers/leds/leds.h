@@ -19,6 +19,17 @@
 static inline void led_set_brightness_async(struct led_classdev *led_cdev,
 					enum led_brightness value)
 {
+
+// guomingyi add .
+#ifdef TINNO_FP_QWK_SUPPORT
+    {
+        extern int get_bl_ctr_flag(struct led_classdev *led_cdev, int value);
+        if (get_bl_ctr_flag(led_cdev, value)){
+            return;
+        }
+    }
+#endif
+
 	value = min(value, led_cdev->max_brightness);
 	led_cdev->brightness = value;
 
@@ -29,6 +40,17 @@ static inline void led_set_brightness_async(struct led_classdev *led_cdev,
 static inline int led_set_brightness_sync(struct led_classdev *led_cdev,
 					enum led_brightness value)
 {
+
+// guomingyi add .
+#ifdef TINNO_FP_QWK_SUPPORT
+    {
+        extern int get_bl_ctr_flag(struct led_classdev *led_cdev, int value);
+        if (get_bl_ctr_flag(led_cdev, value)){
+            return;
+        }
+    }
+#endif
+
 	int ret = 0;
 
 	led_cdev->brightness = min(value, led_cdev->max_brightness);

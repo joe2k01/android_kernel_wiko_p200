@@ -1746,11 +1746,12 @@ static struct packet_fanout *fanout_release(struct sock *sk)
 	if (f) {
 		po->fanout = NULL;
 
-		if (atomic_dec_and_test(&f->sk_ref))
+		if (atomic_dec_and_test(&f->sk_ref))  {
 			list_del(&f->list);
-		else
-			f = NULL;
-
+			dev_remove_pack(&f->prot_hook);
+			fanout_release_data(f);
+			kfree(f);
+		}
 		if (po->rollover)
 			kfree_rcu(po->rollover, rcu);
 	}
@@ -2146,6 +2147,14 @@ static int tpacket_rcv(struct sk_buff *skb, struct net_device *dev,
 			skb_pull(skb, skb_network_offset(skb));
 		}
 	}
+
+	/* gro on: clatd checksum fail patch
+	* if is nornal and gro packet, not calculate tcp's checksum
+	*/
+	if (skb->ip_summed == CHECKSUM_UNNECESSARY ||
+	    (NAPI_GRO_CB(skb)->count > 1 &&
+	    (skb->dev && skb->dev->features & (1 << NETIF_F_GRO_BIT))))
+		status |= TP_STATUS_CSUM_VALID;
 
 	snaplen = skb->len;
 

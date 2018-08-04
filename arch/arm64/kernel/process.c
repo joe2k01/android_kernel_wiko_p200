@@ -130,6 +130,8 @@ void machine_power_off(void)
 {
 	local_irq_disable();
 	smp_send_stop();
+	pr_emerg("machine_power_off, pm_power_off(%p)\n", pm_power_off);
+	dump_stack();
 	if (pm_power_off)
 		pm_power_off();
 }
@@ -153,10 +155,13 @@ void machine_restart(char *cmd)
 	 * UpdateCapsule() depends on the system being reset via
 	 * ResetSystem().
 	 */
-	if (efi_enabled(EFI_RUNTIME_SERVICES))
+	if (efi_enabled(EFI_RUNTIME_SERVICES)) {
+		pr_emerg("machine_restart, efi_reboot(%p)\n", efi_reboot);
 		efi_reboot(reboot_mode, NULL);
 
+	}
 	/* Now call the architecture specific reboot code. */
+	pr_emerg("machine_restart, arm_pm_restart(%p)\n", arm_pm_restart);
 	if (arm_pm_restart)
 		arm_pm_restart(reboot_mode, cmd);
 	else
@@ -182,7 +187,7 @@ static void show_data(unsigned long addr, int nbytes, const char *name)
 	 * don't attempt to dump non-kernel addresses or
 	 * values that are probably just small negative numbers
 	 */
-	if (addr < PAGE_OFFSET || addr > -256UL)
+	if (!pfn_valid(__pa(addr) >> PAGE_SHIFT) || addr > -256UL)
 		return;
 
 	printk("\n%s: %#lx:\n", name, addr);
@@ -367,19 +372,17 @@ int copy_thread(unsigned long clone_flags, unsigned long stack_start,
 
 static void tls_thread_switch(struct task_struct *next)
 {
-	unsigned long tpidr, tpidrro;
+	unsigned long tpidr;
 
 	asm("mrs %0, tpidr_el0" : "=r" (tpidr));
 	*task_user_tls(current) = tpidr;
 
-	tpidr = *task_user_tls(next);
-	tpidrro = is_compat_thread(task_thread_info(next)) ?
-		  next->thread.tp_value : 0;
+	if (is_compat_thread(task_thread_info(next)))
+		write_sysreg(next->thread.tp_value, tpidrro_el0);
+	else if (!arm64_kernel_unmapped_at_el0())
+		write_sysreg(0, tpidrro_el0);
 
-	asm(
-	"	msr	tpidr_el0, %0\n"
-	"	msr	tpidrro_el0, %1"
-	: : "r" (tpidr), "r" (tpidrro));
+	write_sysreg(*task_user_tls(next), tpidr_el0);
 }
 
 /* Restore the UAO state depending on next's addr_limit */
@@ -387,9 +390,11 @@ void uao_thread_switch(struct task_struct *next)
 {
 	if (IS_ENABLED(CONFIG_ARM64_UAO)) {
 		if (task_thread_info(next)->addr_limit == KERNEL_DS)
-			asm(ALTERNATIVE("nop", SET_PSTATE_UAO(1), ARM64_HAS_UAO));
-		else
-			asm(ALTERNATIVE("nop", SET_PSTATE_UAO(0), ARM64_HAS_UAO));
+			asm(ALTERNATIVE("nop", SET_PSTATE_UAO(1), ARM64_HAS_UAO,
+				        CONFIG_ARM64_UAO));
+	else
+			asm(ALTERNATIVE("nop", SET_PSTATE_UAO(0), ARM64_HAS_UAO,
+					CONFIG_ARM64_UAO));
 	}
 }
 

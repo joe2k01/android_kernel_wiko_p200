@@ -1,0 +1,7 @@
+&i2c1 {
+	bq2560x@6B {
+		compatible = "mediatek,bq2560x";
+		reg = <0x6B>;
+		status = "okay";
+	};
+};
