@@ -1,5 +1,3 @@
-#ifdef TINNO_FINGERPRINT_SUPPORT
-
 #ifndef __FP_DRV_H
 #define __FP_DRV_H
 
@@ -63,5 +61,3 @@ typedef struct fingerprint_dev_info_t {
 
 extern int register_fp_dev_info(char *dev_name, char *version, void *args, FpFuncptr fs, FpFuncptr cid);
 #endif /* __FP_DRV_H */
-
-#endif

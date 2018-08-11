@@ -1,5 +1,3 @@
-#ifdef TINNO_FINGERPRINT_SUPPORT
-
 #include <linux/interrupt.h>
 #include <linux/i2c.h>
 #include <linux/slab.h>
@@ -642,5 +640,3 @@ module_exit(fp_drv_exit);
 //MODULE_DESCRIPTION("fp-drv");
 //MODULE_AUTHOR("<mingyi.guo@tinno.com>");
 
-
-#endif /*TINNO_FINGERPRINT_SUPPORT*/

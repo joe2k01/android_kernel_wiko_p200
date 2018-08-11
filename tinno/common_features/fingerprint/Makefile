@@ -5,7 +5,7 @@
 
 
 # fp_drv
-obj-y += elan_96sa
+obj-y += elan_96sa/
 obj-y += fp_drv/
 
 
