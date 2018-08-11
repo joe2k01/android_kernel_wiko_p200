@@ -394,7 +394,7 @@ LINUXINCLUDE    := \
 
 #add for TinnoProductInfo
 #LINUXINCLUDE    += -I$(srctree)/../vendor/tinno/tinnoapps/TinnoProductInfo/kernel/dev_info/
-LINUXINCLUDE    += -I$(srctree)/../kernel-4.4/tinno/common_features/dev_info/
+LINUXINCLUDE    += -I$(srctree)/tinno/common_features/dev_info/
 LINUXINCLUDE  += -I$(srctree)/drivers/misc/mediatek/sensors-1.0/alsps/tp_simulator_ps
 
 KBUILD_CPPFLAGS := -D__KERNEL__
